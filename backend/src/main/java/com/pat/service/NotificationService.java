@@ -13,6 +13,10 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    // AI Feature 6 — real-time push (additive)
+    @Autowired(required = false)
+    private WebSocketNotificationService webSocketNotificationService;
+
     public List<Notification> getUserNotifications(UUID userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
@@ -26,6 +30,10 @@ public class NotificationService {
                 .createdAt(LocalDateTime.now())
                 .build();
         notificationRepository.save(notification);
+        // AI Feature 6 — broadcast live to connected WebSocket clients
+        if (webSocketNotificationService != null) {
+            webSocketNotificationService.pushToUser(userId, title, message, type);
+        }
     }
 
     public void markAsRead(UUID id) {

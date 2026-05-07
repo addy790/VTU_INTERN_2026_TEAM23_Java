@@ -71,6 +71,27 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- ═══════════ AI FEATURE DEPENDENCIES ═══════════ -->
+    <!-- PDF Parsing (Resume Parser) -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>3.0.2</version>
+    </dependency>
+
+    <!-- DOCX Parsing (Resume Parser) -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.2.5</version>
+    </dependency>
+
+    <!-- WebSocket / STOMP (Real-time Notifications) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-websocket</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

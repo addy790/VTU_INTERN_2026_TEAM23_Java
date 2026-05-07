@@ -22,7 +22,7 @@ public class StudentController {
     @PostMapping("/{id}/resume")
     @PreAuthorize("hasRole('STUDENT') or hasRole('ADMIN')")
     public ResponseEntity<?> uploadResume(@PathVariable UUID id, @RequestParam("file") MultipartFile file) {
-        String url = fileStorageService.saveResume(file, id);
+        String url = fileStorageService.storeFile(file, id.toString());
         Student student = studentService.getStudentById(id);
         student.setResumeUrl(url);
         studentService.updateStudent(id, student);

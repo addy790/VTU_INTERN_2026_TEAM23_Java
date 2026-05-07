@@ -8,15 +8,14 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { studentNotifications, adminNotifications } from "@/lib/mock-data";
 import { Link, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function TopBar({ title }: { title?: string }) {
   const { role, user, logout } = useRole();
   const meta = roleMeta[role];
   const navigate = useNavigate();
-  const notifications = role === "admin" ? adminNotifications : studentNotifications;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 backdrop-blur-md px-4 md:px-8">
@@ -38,36 +37,7 @@ export function TopBar({ title }: { title?: string }) {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-glow shadow-glow" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 p-0">
-            <div className="px-4 py-3 border-b border-border">
-              <div className="text-sm font-medium">Notifications</div>
-              <div className="text-xs text-muted-foreground">{notifications.length} new updates</div>
-            </div>
-            <div className="max-h-80 overflow-y-auto divide-y divide-border">
-              {notifications.map(n => (
-                <div key={n.id} className="px-4 py-3 hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-start gap-2">
-                    <div className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${
-                      n.type === "success" ? "bg-success" : n.type === "warning" ? "bg-warning" : "bg-info"
-                    }`} />
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{n.title}</div>
-                      <div className="text-xs text-muted-foreground line-clamp-2">{n.body}</div>
-                      <div className="text-[10px] text-muted-foreground mt-1">{n.time}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

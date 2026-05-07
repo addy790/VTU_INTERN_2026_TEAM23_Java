@@ -14,6 +14,9 @@ public class DriveController {
     @Autowired
     private DriveService driveService;
 
+    @Autowired
+    private com.pat.service.ShortlistService shortlistService;
+
     @GetMapping
     public ResponseEntity<?> getAllDrives() {
         return ResponseEntity.ok(driveService.getAllDrives());
@@ -21,13 +24,19 @@ public class DriveController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> createDrive(@RequestBody DriveRequest request) {
+    public ResponseEntity<?> createDrive(@RequestBody com.pat.dto.DriveRequest request) {
         return ResponseEntity.ok(driveService.createDrive(request));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getDriveById(@PathVariable UUID id) {
         return ResponseEntity.ok(driveService.getDriveById(id));
+    }
+
+    @PostMapping("/{id}/auto-shortlist")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('RECRUITER')")
+    public ResponseEntity<?> autoShortlist(@PathVariable UUID id) {
+        return ResponseEntity.ok(shortlistService.autoShortlist(id));
     }
 
     @DeleteMapping("/{id}")

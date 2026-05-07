@@ -10,6 +10,10 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationTracker } from "@/components/ApplicationTracker";
+import { ResumeUploadDialog } from "@/components/ResumeUploadDialog";
+import { PlacementMeter } from "@/components/PlacementMeter";
+import { JobMatchCard } from "@/components/JobMatchCard";
+import { SkillGapRadar } from "@/components/SkillGapRadar";
 
 const stages = ["Applied", "Shortlisted", "Interview", "Selected"] as const;
 
@@ -36,6 +40,8 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [showTracker, setShowTracker] = useState(false);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recLoading, setRecLoading] = useState(true);
 
   const fetchDashboard = async () => {
     try {
@@ -55,9 +61,23 @@ const StudentDashboard = () => {
     }
   };
 
+  const fetchRecommendations = async () => {
+    if (!user?.id) return;
+    setRecLoading(true);
+    try {
+      const recs = await api.matching.getRecommendedDrives(user.id);
+      setRecommendations(recs);
+    } catch (err) {
+      console.error("Failed to fetch recommendations:", err);
+    } finally {
+      setRecLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchDashboard();
+      fetchRecommendations();
     }
   }, [user]);
 
@@ -115,56 +135,36 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          <div className="surface-card p-6">
+          <div className="surface-card p-6 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Upload className="h-12 w-12" />
+            </div>
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Resume</div>
-                <div className="text-xs text-muted-foreground">
-                  {user?.resumeUrl ? user.resumeUrl.split("/").pop() : "No resume uploaded"}
+                <div className="font-display font-semibold">Resume Intelligence</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {user?.resumeUrl ? "Last updated: " + user.resumeUrl.split("/").pop()?.substring(0, 20) + "..." : "No resume detected"}
                 </div>
               </div>
-              <label className="cursor-pointer">
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  accept=".pdf"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      try {
-                        const loadingToast = toast.loading("Uploading resume...");
-                        await api.students.uploadResume(user!.id, file);
-                        toast.dismiss(loadingToast);
-                        toast.success("Resume updated!");
-                        fetchDashboard();
-                      } catch (err) {
-                        toast.error("Upload failed.");
-                      }
-                    }
-                  }}
-                />
-                <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-3">
-                  <Upload className="h-3.5 w-3.5 mr-1.5" /> Update
-                </div>
-              </label>
+              <ResumeUploadDialog onComplete={() => { fetchDashboard(); fetchRecommendations(); }} />
             </div>
-            {user?.resumeUrl ? (
-              <div className="mt-4 rounded-lg border border-border bg-secondary/30 aspect-[8.5/11] overflow-hidden">
+            
+            {user?.resumeUrl && (
+              <div className="mt-4 rounded-xl border border-border bg-secondary/30 aspect-[8.5/11] overflow-hidden shadow-inner group-hover:border-primary/30 transition-colors">
                 <iframe 
                   src={`http://localhost:8080${user.resumeUrl}`} 
-                  className="w-full h-full border-none"
+                  className="w-full h-full border-none opacity-80 group-hover:opacity-100 transition-opacity"
                   title="Resume Preview"
                 />
               </div>
-            ) : (
-              <div className="mt-4 rounded-lg border border-dashed border-border bg-secondary/30 aspect-[8.5/11] grid place-items-center">
-                <div className="text-center px-6">
-                  <div className="font-display text-sm">No resume found</div>
-                  <div className="text-xs text-muted-foreground mt-1">Upload your PDF profile</div>
-                </div>
-              </div>
             )}
           </div>
+
+          <PlacementMeter />
+
+          {recommendations.length > 0 && (
+            <SkillGapRadar data={recommendations[0]} loading={recLoading} />
+          )}
         </section>
 
         {/* Right column */}
@@ -217,11 +217,38 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* Drives */}
+          {/* AI Recommended Drives */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-display text-xl font-bold tracking-tight">AI Recommended for You</h2>
+                <p className="text-xs text-muted-foreground">Top matches based on your unique profile and skills</p>
+              </div>
+              <Link to="/student/drives" className="text-[10px] uppercase tracking-widest font-bold text-primary hover:underline">Explore All</Link>
+            </div>
+            
+            <div className="grid sm:grid-cols-2 gap-4">
+              {recLoading ? (
+                Array(2).fill(0).map((_, i) => (
+                  <div key={i} className="h-48 rounded-xl border border-border/40 bg-secondary/20 animate-pulse" />
+                ))
+              ) : recommendations.length > 0 ? (
+                recommendations.slice(0, 2).map(rec => (
+                  <JobMatchCard key={rec.driveId} match={rec} onApply={handleApply} />
+                ))
+              ) : (
+                <div className="col-span-2 p-8 text-center border border-dashed border-border rounded-xl bg-secondary/10">
+                  <p className="text-sm text-muted-foreground italic">No recommendations found. Complete your profile or upload a resume to get started!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Standard Drives */}
           <div className="surface-card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="font-display text-lg">Open drives for you</div>
+                <div className="font-display text-lg">All recruitment drives</div>
                 <div className="text-xs text-muted-foreground">Eligible based on your CGPA & branch</div>
               </div>
               <Link to="/student/drives" className="text-xs text-accent hover:underline inline-flex items-center gap-1">Browse all <ArrowRight className="h-3 w-3" /></Link>
@@ -235,10 +262,10 @@ const StudentDashboard = () => {
                 realDrives.slice(0, 4).map(d => {
                   const hasApplied = (realApplications || []).some(a => a?.drive?.id === d?.id);
                   return (
-                    <div key={d?.id || Math.random()} className="p-4 rounded-lg border border-border bg-gradient-card hover:border-primary/40 transition-colors">
+                    <div key={d?.id || Math.random()} className="p-4 rounded-lg border border-border bg-gradient-card hover:border-primary/40 transition-colors group">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-10 w-10 rounded-md grid place-items-center text-sm font-semibold" style={{ background: `hsl(280 100% 50% / 0.2)`, color: `hsl(280 100% 50%)` }}>{d?.companyName?.[0] || "?"}</div>
+                          <div className="h-10 w-10 rounded-md grid place-items-center text-sm font-semibold group-hover:scale-110 transition-transform" style={{ background: `hsl(280 100% 50% / 0.2)`, color: `hsl(280 100% 50%)` }}>{d?.companyName?.[0] || "?"}</div>
                           <div className="min-w-0">
                             <div className="text-sm font-medium truncate">{d?.companyName || "Unknown"}</div>
                             <div className="text-xs text-muted-foreground truncate">{d?.role || "Role"}</div>
@@ -248,15 +275,15 @@ const StudentDashboard = () => {
                       </div>
                       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{"Remote / On-site"}</span>
-                        <span className="font-mono text-foreground">{d?.packageAmount || "N/A"}</span>
+                        <span className="font-mono text-foreground font-bold">{d?.packageAmount || "N/A"}</span>
                       </div>
                       <Button 
                         size="sm" 
                         disabled={hasApplied}
                         onClick={() => handleApply(d.id)}
-                        className={`w-full mt-4 ${hasApplied ? "bg-secondary" : "bg-gradient-maroon hover:opacity-90"}`}
+                        className={`w-full mt-4 h-8 text-[11px] uppercase tracking-wider font-bold transition-all ${hasApplied ? "bg-secondary" : "bg-primary hover:shadow-glow"}`}
                       >
-                        {hasApplied ? "Applied" : "Apply now"}
+                        {hasApplied ? "Already Applied" : "Quick Apply"}
                       </Button>
                     </div>
                   );

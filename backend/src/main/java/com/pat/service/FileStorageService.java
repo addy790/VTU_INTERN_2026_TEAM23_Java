@@ -13,20 +13,16 @@ import java.util.UUID;
 public class FileStorageService {
     private final Path root = Paths.get("uploads");
 
-    public String saveResume(MultipartFile file, UUID studentId) {
+    public String storeFile(MultipartFile file, String prefix) {
         try {
             if (!Files.exists(root)) {
-                Files.createDirectory(root);
+                Files.createDirectories(root);
             }
-            if (!Files.exists(root.resolve("resumes"))) {
-                Files.createDirectory(root.resolve("resumes"));
-            }
-            
-            String fileName = studentId.toString() + "_" + file.getOriginalFilename();
-            Files.copy(file.getInputStream(), root.resolve("resumes").resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-            return "/api/files/resumes/" + fileName;
+            String fileName = prefix + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Files.copy(file.getInputStream(), root.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+            return "/uploads/" + fileName;
         } catch (IOException e) {
-            throw new RuntimeException("Could not store formatting file. Error: " + e.getMessage());
+            throw new RuntimeException("Could not store file. Error: " + e.getMessage());
         }
     }
 }

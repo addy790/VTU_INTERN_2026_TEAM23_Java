@@ -106,4 +106,24 @@ public class AuthService {
         }
         otpService.generateOtp(email);
     }
+
+    @Transactional
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        otpService.generateOtp(email);
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        if (otpService.verifyOtp(request.getEmail(), request.getCode())) {
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            user.setPassword(encoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+            otpService.deleteOtp(request.getEmail()); // Cleanup OTP after success
+        } else {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+    }
 }

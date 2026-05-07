@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 type Role = "STUDENT" | "ADMIN" | "COORDINATOR" | "RECRUITER";
 
@@ -12,11 +12,15 @@ export interface User {
 export const api = {
   async request(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem("pat:token");
-    const headers = {
+    const headers: any = {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     };
+
+    if (headers["Content-Type"] === "AUTO") {
+      delete headers["Content-Type"];
+    }
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       ...options,
@@ -63,18 +67,19 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
-  },
-  dashboard: {
-    getStats: () => api.request("/dashboard/stats"),
-  },
-  drives: {
-    getAll: () => api.request("/drives"),
-    getById: (id: string) => api.request(`/drives/${id}`),
-    create: (data: any) =>
-      api.request("/drives", {
+    forgotPassword: (email: string) =>
+      api.request("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }),
+    resetPassword: (data: any) =>
+      api.request("/auth/reset-password", {
         method: "POST",
         body: JSON.stringify(data),
       }),
+  },
+  dashboard: {
+    getStats: () => api.request("/dashboard/stats"),
   },
   students: {
     getAll: () => api.request("/students"),
@@ -115,6 +120,53 @@ export const api = {
     updateStatus: (id: string, status: string) =>
       api.request(`/applications/${id}/status?status=${status}`, {
         method: "PATCH",
+      }),
+  },
+  notifications: {
+    getAll: (userId: string) => api.request(`/notifications/user/${userId}`),
+    markAsRead: (id: string) =>
+      api.request(`/notifications/${id}/read`, {
+        method: "PATCH",
+      }),
+  },
+  resume: {
+    upload: (studentId: string, file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return api.request(`/resume/upload/${studentId}`, {
+        method: "POST",
+        body: formData,
+        headers: { "Content-Type": "AUTO" },
+      });
+    },
+    confirm: (studentId: string, data: any) =>
+      api.request(`/resume/confirm/${studentId}`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+  },
+  matching: {
+    getRecommendedDrives: (studentId: string) =>
+      api.request(`/matching/student/${studentId}`),
+    getRankedCandidates: (driveId: string) =>
+      api.request(`/matching/drive/${driveId}`),
+    getGapAnalysis: (studentId: string, driveId: string) =>
+      api.request(`/matching/gap/${studentId}/${driveId}`),
+  },
+  prediction: {
+    get: (studentId: string) => api.request(`/prediction/${studentId}`),
+  },
+  drives: {
+    getAll: () => api.request("/drives"),
+    getById: (id: string) => api.request(`/drives/${id}`),
+    create: (data: any) =>
+      api.request("/drives", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    autoShortlist: (id: string) =>
+      api.request(`/drives/${id}/auto-shortlist`, {
+        method: "POST",
       }),
   },
 };

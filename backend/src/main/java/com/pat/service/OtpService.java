@@ -44,4 +44,9 @@ public class OtpService {
                 .map(token -> token.getExpiryTime().isAfter(LocalDateTime.now()))
                 .orElse(false);
     }
+
+    @Transactional
+    public void deleteOtp(String email) {
+        otpRepository.deleteByEmail(email);
+    }
 }

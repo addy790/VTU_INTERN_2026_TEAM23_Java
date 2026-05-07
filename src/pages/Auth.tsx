@@ -23,6 +23,13 @@ export default function Auth() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   
+  // Forgot Password States
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetStep, setResetStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  
   const { setAuth } = useRole();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,6 +85,35 @@ export default function Auth() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.auth.forgotPassword(resetEmail);
+      toast({ title: "Code Sent", description: "Reset code sent to your email." });
+      setResetStep(2);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Request failed", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.auth.resetPassword({ email: resetEmail, code: resetCode, newPassword });
+      toast({ title: "Password Reset", description: "You can now log in with your new password." });
+      setShowResetDialog(false);
+      setResetStep(1);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Reset failed", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen hero-bg flex flex-col items-center justify-center p-6">
       <div className="mb-8 scale-110">
@@ -103,7 +139,16 @@ export default function Auth() {
                   <Input id="email" type="email" placeholder="name@university.edu" value={email} onChange={e => setEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <div className="flex justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowResetDialog(true)}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
                 </div>
               </CardContent>
@@ -189,6 +234,62 @@ export default function Auth() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify & Continue"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={(val) => { setShowResetDialog(val); if (!val) setResetStep(1); }}>
+        <DialogContent className="sm:max-w-md surface-card">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              {resetStep === 1 ? "Enter your email to receive a reset code." : 
+               resetStep === 2 ? "Enter the 6-digit code sent to your email." : 
+               "Enter your new secure password."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {resetStep === 1 && (
+            <form onSubmit={handleForgotPassword} className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email Address</Label>
+                <Input id="reset-email" type="email" placeholder="name@university.edu" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-maroon" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Send Reset Code"}
+              </Button>
+            </form>
+          )}
+
+          {resetStep === 2 && (
+            <div className="flex flex-col items-center py-4 space-y-6">
+              <InputOTP maxLength={6} value={resetCode} onChange={setResetCode}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+              <Button className="w-full bg-gradient-maroon" onClick={() => setResetStep(3)} disabled={resetCode.length < 6}>
+                Verify Code
+              </Button>
+            </div>
+          )}
+
+          {resetStep === 3 && (
+            <form onSubmit={handleResetPassword} className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input id="new-password" type="password" placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-maroon" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Update Password"}
+              </Button>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

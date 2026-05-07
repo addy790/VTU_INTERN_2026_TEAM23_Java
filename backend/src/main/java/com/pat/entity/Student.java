@@ -48,4 +48,12 @@ public class Student {
     private boolean placed = false;
     
     private String packageAmount;
+
+    // ═══ AI Feature Fields (additive) ═══
+    private Integer internshipCount = 0;
+    private Integer projectCount = 0;
+    private Integer aptitudeScore = 0;
+
+    @Column(columnDefinition = "TEXT")
+    private String resumeText;
 }
