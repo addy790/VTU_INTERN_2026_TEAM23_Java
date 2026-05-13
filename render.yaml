@@ -21,7 +21,7 @@ services:
         sync: false
 
   # Frontend Static Site
-  - type: static
+  - type: static_site
     name: placement-compass-web
     env: node
     buildCommand: npm install && npm run build
