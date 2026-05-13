@@ -28,10 +28,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: placement-compass-api
-          property: host
+        value: https://placement-compass-api.onrender.com/api
     routes:
       - type: rewrite
         source: /*
