@@ -39,7 +39,18 @@ export default function Auth() {
     setLoading(true);
     try {
       const res = await api.auth.login({ email, password });
-      setAuth(res.token, { id: res.id, email: res.email, role: res.role });
+      
+      if (!res || !res.role) {
+        throw new Error("Invalid response from server: Missing user role.");
+      }
+
+      setAuth(res.token, { 
+        id: res.id, 
+        email: res.email, 
+        name: res.name || "User", 
+        role: (res.role || "student").toUpperCase()
+      });
+      
       toast({ title: "Welcome back!", description: "Successfully logged in." });
       navigate(`/${res.role.toLowerCase()}`);
     } catch (err: any) {

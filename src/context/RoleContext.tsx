@@ -28,10 +28,10 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 
   const role = user?.role || "student";
 
-  const setAuth = (newToken: string, userData: { id: string, email: string, role: string }) => {
+  const setAuth = (newToken: string, userData: { id: string, email: string, name: string, role: string }) => {
     const formattedUser: User = {
       ...userData,
-      role: userData.role.toLowerCase() as Role
+      role: (userData.role || "student").toLowerCase() as Role
     };
     setToken(newToken);
     setUser(formattedUser);
