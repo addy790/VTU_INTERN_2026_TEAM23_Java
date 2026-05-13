@@ -52,17 +52,23 @@ export default function Auth() {
       });
       
       toast({ title: "Welcome back!", description: "Successfully logged in." });
-      navigate(`/${res.role.toLowerCase()}`);
+      const targetRole = String(res.role || "student").toLowerCase();
+      navigate(`/${targetRole}`);
     } catch (err: any) {
-      if (err.message && err.message.toLowerCase().includes("not verified")) {
-        // Resend OTP and show dialog
-        try {
-          await api.auth.resendOtp({ email });
-        } catch {}
+      console.error("Login Error:", err);
+      const errMsg = err?.message || String(err) || "Unknown error";
+      
+      if (errMsg.toLowerCase().includes("not verified")) {
+        // ... (OTP handling)
+        try { await api.auth.resendOtp({ email }); } catch {}
         setShowOtp(true);
-        toast({ title: "Verification required", description: "A new OTP has been sent to your email." });
+        toast({ title: "Verification required", description: "A new OTP has been sent." });
       } else {
-        toast({ variant: "destructive", title: "Login failed", description: err.message });
+        toast({ 
+          variant: "destructive", 
+          title: "Login failed", 
+          description: `Error: ${errMsg}` 
+        });
       }
     } finally {
       setLoading(false);
