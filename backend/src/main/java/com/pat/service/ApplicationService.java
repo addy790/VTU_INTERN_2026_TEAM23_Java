@@ -61,8 +61,7 @@ public class ApplicationService {
         return applicationRepository.save(application);
     }
 
-    public Map<ApplicationStatus, List<Application>> getPipeline() {
-        return applicationRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Application::getStatus));
+    public List<Application> getPipeline() {
+        return applicationRepository.findAll();
     }
 }

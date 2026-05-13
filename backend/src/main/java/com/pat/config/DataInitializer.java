@@ -52,6 +52,28 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(recruiter);
         }
 
+        if (!userRepository.existsByEmail("student@pat.com")) {
+            User studentUser = User.builder()
+                    .email("student@pat.com")
+                    .name("John Doe")
+                    .password(encoder.encode("student123"))
+                    .role(Role.STUDENT)
+                    .verified(true)
+                    .build();
+            userRepository.save(studentUser);
+
+            Student student = Student.builder()
+                    .user(studentUser)
+                    .name("John Doe")
+                    .branch("Computer Science")
+                    .cgpa(9.2)
+                    .skills(java.util.Arrays.asList("Java", "Spring Boot", "React", "Docker"))
+                    .verified(true)
+                    .build();
+            studentRepository.save(student);
+            System.out.println("Dummy Student seeded successfully!");
+        }
+
         // Seed Job Drives
         if (driveRepository.count() == 0) {
             Drive d1 = Drive.builder()
@@ -84,7 +106,7 @@ public class DataInitializer implements CommandLineRunner {
             driveRepository.saveAll(java.util.Arrays.asList(d1, d2, d3));
             System.out.println("Dummy Job Drives seeded successfully!");
 
-            // Seed Applications for the first student found
+            // Seed Applications
             studentRepository.findAll().stream().findFirst().ifPresent(student -> {
                 if (applicationRepository.count() == 0) {
                     Application a1 = Application.builder()
@@ -94,7 +116,16 @@ public class DataInitializer implements CommandLineRunner {
                             .appliedAt(java.time.LocalDateTime.now())
                             .build();
                     applicationRepository.save(a1);
-                    System.out.println("Dummy Application seeded for: " + student.getName());
+                    
+                    Application a2 = Application.builder()
+                            .student(student)
+                            .drive(d2)
+                            .status(com.pat.entity.ApplicationStatus.SHORTLISTED)
+                            .appliedAt(java.time.LocalDateTime.now())
+                            .build();
+                    applicationRepository.save(a2);
+                    
+                    System.out.println("Dummy Applications seeded for: " + student.getName());
                 }
             });
         }
